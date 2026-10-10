@@ -1,0 +1,32 @@
+<!doctype html>
+<!--
+  Tesla only accepts public https redirect URIs. Host this page on GitHub Pages (or any https site) and register its URL
+  as the redirect URI. It forwards Tesla's one-time login code to PesäOS on this PC; the code is useless without the
+  client secret, and PesäOS checks the login's state value before using it.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>PesäOS · Tesla login</title>
+  <style>
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #070b14; color: #e7edf7;
+           font: 16px/1.5 system-ui, sans-serif; }
+    a { color: #ffb347; }
+  </style>
+</head>
+<body>
+  <p id="msg">Returning to PesäOS…</p>
+  <script>
+    // Change the port here if PesäOS runs on another one.
+    const target = "http://localhost:8765/api/tesla/callback" + location.search;
+    if (location.search.includes("code=") || location.search.includes("error=")) {
+      location.replace(target);
+      document.getElementById("msg").innerHTML = `Returning to PesäOS… If nothing happens, <a href="${target}">continue</a>.`;
+    } else {
+      document.getElementById("msg").textContent = "This page forwards Tesla logins to PesäOS. Start the login from PesäOS.";
+    }
+  </script>
+</body>
+</html>
