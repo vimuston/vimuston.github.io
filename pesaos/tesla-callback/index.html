@@ -1,8 +1,10 @@
 <!doctype html>
 <!--
   Tesla only accepts public https redirect URIs. Host this page on GitHub Pages (or any https site) and register its URL
-  as the redirect URI. It forwards Tesla's one-time login code to PesäOS on this PC; the code is useless without the
-  client secret, and PesäOS checks the login's state value before using it.
+  as the redirect URI. It forwards Tesla's one-time login code to PesäOS on your home network; the code is useless without
+  the client secret, and PesäOS checks the login's state value before using it.
+  PesäOS puts its own address (e.g. http://rpi.local:8765) after the last "." of the state value; only private-network
+  addresses are accepted, so this page can't be used to redirect anywhere else.
 -->
 <html lang="en">
 <head>
@@ -19,11 +21,23 @@
 <body>
   <p id="msg">Returning to PesäOS…</p>
   <script>
-    // Change the port here if PesäOS runs on another one.
-    const target = "http://localhost:8765/api/tesla/callback" + location.search;
+    const PRIVATE = /^http:\/\/(localhost|127\.0\.0\.1|[a-z0-9-]+(\.local|\.lan|\.home\.arpa)?|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})(:\d{1,5})?$/i;
+    function origin() {
+      const state = new URLSearchParams(location.search).get("state") || "";
+      const tail = state.includes(".") ? state.slice(state.lastIndexOf(".") + 1) : "";
+      try {
+        const o = atob(tail.replace(/-/g, "+").replace(/_/g, "/"));
+        if (PRIVATE.test(o)) return o;
+      } catch { /* older PesäOS: no address in the state */ }
+      return "http://localhost:8765";
+    }
     if (location.search.includes("code=") || location.search.includes("error=")) {
+      const target = origin() + "/api/tesla/callback" + location.search;
       location.replace(target);
-      document.getElementById("msg").innerHTML = `Returning to PesäOS… If nothing happens, <a href="${target}">continue</a>.`;
+      const a = document.createElement("a");
+      a.href = target;
+      a.textContent = "continue";
+      document.getElementById("msg").replaceChildren("Returning to PesäOS… If nothing happens, ", a, ".");
     } else {
       document.getElementById("msg").textContent = "This page forwards Tesla logins to PesäOS. Start the login from PesäOS.";
     }
